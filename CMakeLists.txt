@@ -5,13 +5,26 @@
 cmake_minimum_required(VERSION 3.17)
 
 # Include the subsidiary .cmake file to get the SDK
-include($ENV{PICO_SDK_PATH}/external/pico_sdk_import.cmake)
+include($ENV{PICO_SDK_PATH}/pico_sdk_init.cmake)
+
+project(pico_examples C CXX ASM)
+set(CMAKE_C_STANDARD 11)
+set(CMAKE_CXX_STANDARD 17)
+
+if (PICO_SDK_VERSION_STRING VERSION_LESS "1.3.0")
+    message(FATAL_ERROR "Raspberry Pi Pico SDK version 1.3.0 (or later) required. Your version is ${PICO_SDK_VERSION_STRING}")
+endif()
+
+
 
 # Set the name and version of the project
 project(PicoBTSPP VERSION 1.0.0)
 
 # Set the board to Raspberry Pi Pico W
 set(PICO_BOARD pico_w)
+
+# Initialize the SDK
+pico_sdk_init()
 
 # Set top source code folder
 set(SOURCE_FOLDER "src")
@@ -22,34 +35,12 @@ set(default_build_type "Release")
 # Set CMAKE_BUILD_TYPE
 set(CMAKE_BUILD_TYPE "${default_build_type}" CACHE STRING "Choose the type of build, options are: 'Debug', 'Release', 'MinSizeRel', 'RelWithDebInfo'." FORCE)
 
-# Initialize the SDK
-pico_sdk_init()
 
 # Add an executable target for the project
 add_executable(${PROJECT_NAME})
 
-# Get all the pio files, when the glob value changes, cmake will run again and update the files
-file(GLOB_RECURSE pio_src CONFIGURE_DEPENDS "${SOURCE_FOLDER}/*.pio")
-
-# Convert List to String
-STRING(REPLACE ";" "\n" PIO_SRC_STR "${pio_src}")
-
-# Print the pio source file list
-message(STATUS "PIO code source files: \n${PIO_SRC_STR}")
-
-# If there are any PIO source files, include them to the build.
-if (NOT pio_src STREQUAL "")
-  pico_generate_pio_header(${PROJECT_NAME} ${pio_src})
-endif()
-
 # Get all C and C++ files, when the glob value changes, cmake will run again and update the files
 file(GLOB_RECURSE app_src CONFIGURE_DEPENDS "${SOURCE_FOLDER}/*.c" "${SOURCE_FOLDER}/*.cpp" )
-
-# Convert List to String
-STRING(REPLACE ";" "\n" APP_SRC_STR "${app_src}")
-
-# Print the C and C++ source file list
-message(STATUS "C and C++ source files: \n${APP_SRC_STR}")
 
 # Add C and C++ source files to the build
 target_sources(${PROJECT_NAME} PRIVATE ${app_src})
